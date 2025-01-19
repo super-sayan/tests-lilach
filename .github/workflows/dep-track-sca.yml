@@ -250,9 +250,11 @@ jobs:
               Find the line number of the dependency in the package.json file.
               """
               print(dependency_name)
+              print(file_path)
               try:
                   with open(file_path, "r") as file:
                       lines = file.readlines()
+                      print(lines)
                       for i, line in enumerate(lines, start=1):
                           # Match the dependency name in a JSON line
                           if re.search(f'"{re.escape(dependency_name)}"', line):
