@@ -244,7 +244,7 @@ jobs:
               
           def epss_score_to_severity(epss_score, cvss_score):
               """
-              Map EPSS score to SARIF alert levels.
+              This fucntion calculates a severity of cves based on their EPSS and CVSS scores.
               """
               normalized_epss = 1
               if epss_score > 0.6:
@@ -359,7 +359,7 @@ jobs:
                           "text": vulnerability["description"]
                       },
                       "defaultConfiguration": {
-                          "level": severity
+                          "level": "none"
                       },
                       "helpUri": f"https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']}",
                       "help": {
@@ -395,7 +395,7 @@ jobs:
                   # Add result
                   result = {
                       "ruleId": vulnerability["vulnId"],
-                      "level": severity,
+                      "level": "none",
                       "message": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
