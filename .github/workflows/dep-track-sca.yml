@@ -250,25 +250,32 @@ jobs:
                   return "warning"
               else:
                   return "error"
-                  
+          
           def find_dependency_line(file_path, dependency_name):
               """
-              Find the line number of the dependency in the package.json file.
+              Find the line number of the dependency in a file, supporting both JSON and plain text formats.
               """
-              print(dependency_name)
-              print(file_path)
               try:
                   with open(file_path, "r") as file:
                       lines = file.readlines()
-                      print(lines)
-                      for i, line in enumerate(lines, start=1):
-                          # Match the dependency name in a JSON line
-                          if re.search(f'"{re.escape(dependency_name)}"', line):
-                              return i
+            
+                      # Detect file format based on extension
+                      if file_path.endswith(('.json', '.lock')):  # JSON-based files
+                          for i, line in enumerate(lines, start=1):
+                              # Match the dependency name as a JSON key
+                              if re.search(f'"{re.escape(dependency_name)}"', line):
+                                  return i
+                      elif file_path.endswith('.txt'):  # Plain text files like requirements.txt
+                          for i, line in enumerate(lines, start=1):
+                              # Match the dependency name in the line (e.g., Flask==2.2.3 or Flask>=2.2.0)
+                              if re.match(f'^{re.escape(dependency_name)}([=><!].*)?$', line.strip(), re.IGNORECASE):
+                                  return i
               except FileNotFoundError:
                   print(f"File not found: {file_path}")
+              except json.JSONDecodeError:
+                  print(f"Failed to parse JSON in file: {file_path}")
               return 1  # Default to line 1 if not found
-    
+          
           def transform_epss_to_sarif(input_json_path, output_sarif_path):
               """
               Transform EPSS JSON into SARIF format.
