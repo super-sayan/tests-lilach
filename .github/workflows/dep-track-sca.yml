@@ -266,15 +266,15 @@ jobs:
                   normalized_cvss = 2
               severity = round((${{ env.CVSS_WEIGHT }} * normalized_cvss + ${{ env.EPSS_WEIGHT }} * normalized_epss) / (${{ env.CVSS_WEIGHT }} + ${{ env.EPSS_WEIGHT }}))
               if severity == 1:
-                  return 0
+                  return "0"
               elif severity == 2:
-                  return 2
+                  return "2"
               elif severity == 3:
-                  return 5
+                  return "5"
               elif severity == 4:
-                  return 8
+                  return "8"
               else:
-                  return 10
+                  return "10"
               return str(severity_score)
                   
           def find_dependency_line(file_path, dependency_name):
