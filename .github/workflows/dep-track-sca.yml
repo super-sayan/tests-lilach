@@ -345,7 +345,7 @@ jobs:
                   dep_name = component["name"]
                   unused_deps = ""
                   with open("unused_dependencies.txt", "r") as file:
-                      unused_deps = file.readlines()
+                      unused_deps = file.read()
                   print(f"unused deps: {unused_deps}")
                   if dep_name in dependency_locations:
                       location_info = dependency_locations[dep_name]
