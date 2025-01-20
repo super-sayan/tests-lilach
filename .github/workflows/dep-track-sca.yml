@@ -360,7 +360,7 @@ jobs:
                           "text": vulnerability["description"]
                       },
                       "defaultConfiguration": {
-                          "level": "none"
+                          "level": "note"
                       },
                       "helpUri": f"https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']}",
                       "help": {
@@ -396,7 +396,7 @@ jobs:
                   # Add result
                   result = {
                       "ruleId": vulnerability["vulnId"],
-                      "level": "none",
+                      "level": "note",
                       "message": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
