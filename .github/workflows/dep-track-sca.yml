@@ -343,6 +343,9 @@ jobs:
                   component = entry["component"]
                   vulnerability = entry["vulnerability"]
                   dep_name = component["name"]
+                  unused_deps = ""
+                  with open("unused_dependencies.txt", "r") as file:
+                      unused_deps = file.readlines()
                   if dep_name in dependency_locations:
                       location_info = dependency_locations[dep_name]
                       file_path = location_info.get("file", "unknown")
@@ -350,8 +353,9 @@ jobs:
                       file_path = find_dep_location(component["purl"])
                   epss_score = vulnerability.get("epssScore", 0)
                   cvss_score = vulnerability.get("cvssV3BaseScore", 0)
-                  severity = epss_score_to_severity(epss_score, cvss_score)
-          
+                  severity = "0"
+                  if dep_name not in unused_deps: 
+                      severity = epss_score_to_severity(epss_score, cvss_score)
                   # Add rule if not already added
                   rule = {
                       "id": vulnerability["vulnId"],
@@ -366,7 +370,7 @@ jobs:
                       "help": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"Severity: {severity}\n"
+                              f"cvssScore: {cvss_score}\n"
                               f"Package: {component['purl']}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})\n"
@@ -374,9 +378,9 @@ jobs:
                           ),
                           "markdown": (
                               f"**Vulnerability {vulnerability['vulnId']}**\n"
-                              f"| Severity | Package | epssScore | Link |\n"
+                              f"| cvssScore | Package | epssScore | Link |\n"
                               f"| --- | --- | --- | --- |\n"
-                              f"|{severity}|{component['purl']}|{epss_score}|"
+                              f"|{cvss_score}|{component['purl']}|{epss_score}|"
                               f"[CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})|\n\n"
                               f"{vulnerability['description']}"
                           )
@@ -400,7 +404,7 @@ jobs:
                       "message": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"Severity: {severity}\n"
+                              f"cvssScore: {cvss_score}\n"
                               f"Package: {component['purl']}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})"
