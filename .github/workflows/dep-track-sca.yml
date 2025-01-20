@@ -7,6 +7,8 @@ env:
   DEPENDENCY_TRACK_BASE_URL: ${{ secrets.API_URL }} # URL of Dependency Track API server
   DEPENDENCY_TRACK_SHORT_URL: ${{ secrets.API_SURL }}
   PROJECT_NAME: ${{ github.repository }}
+  EPSS_WEIGHT: 1
+  CVSS_WEIGHT: 1
 
 jobs:
   code_analysis:
@@ -240,17 +242,40 @@ jobs:
                       print(f"Failed to parse {lockfile_path}")
               return "unknown-lock"
               
-          def epss_score_to_level(epss_score):
+          def epss_score_to_severity(epss_score, cvss_score):
               """
               Map EPSS score to SARIF alert levels.
               """
-              if epss_score < 0.001:
-                  return "note"
-              elif epss_score < 0.01:
-                  return "warning"
+              normalized_epss = 1
+              if epss_score > 0.6:
+                  normalized_epss = 5
+              elif epss_score > 0.3:
+                  normalized_epss = 4
+              elif epss_score > 0.1:
+                  normalized_epss = 3
+              elif epss_score >= 0.01:
+                  normalized_epss = 2
+              normalized_cvss = 1
+              if cvss_score >= 9.0:
+                  normalized_cvss = 5
+              elif cvss_score >= 7.0:
+                  normalized_cvss = 4
+              elif cvss_score >= 4.0:
+                  normalized_cvss = 3
+              elif cvss_score >= 0.1:
+                  normalized_cvss = 2
+              severity = round((${{ env.CVSS_WEIGHT }} × normalized_cvss + ${{ env.EPSS_WEIGHT }} × normalized_epss) / (${{ env.CVSS_WEIGHT }} + ${{ env.EPSS_WEIGHT }}))
+              if severity == 1:
+                  return "Informational"
+              elif severity == 2:
+                  return "Low"
+              elif severity == 3:
+                  return "Medium"
+              elif severity == 4:
+                  return "High"
               else:
-                  return "error"
-          
+                  return "Critical"
+                  
           def find_dependency_line(file_path, dependency_name):
               """
               Find the line number of the dependency in a file, supporting both JSON and plain text formats.
@@ -323,7 +348,8 @@ jobs:
                   else:
                       file_path = find_dep_location(component["purl"])
                   epss_score = vulnerability.get("epssScore", 0)
-                  level = epss_score_to_level(epss_score)
+                  cvss_score = vulnerability.get("cvssV3BaseScore", 0)
+                  severity = epss_score_to_severity(epss_score, cvss_score)
           
                   # Add rule if not already added
                   rule = {
@@ -333,13 +359,13 @@ jobs:
                           "text": vulnerability["description"]
                       },
                       "defaultConfiguration": {
-                          "level": level
+                          "level": severity
                       },
                       "helpUri": f"https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']}",
                       "help": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"Severity: {vulnerability['severity']}\n"
+                              f"Severity: {severity}\n"
                               f"Package: {component['purl']}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})\n"
@@ -349,7 +375,7 @@ jobs:
                               f"**Vulnerability {vulnerability['vulnId']}**\n"
                               f"| Severity | Package | epssScore | Link |\n"
                               f"| --- | --- | --- | --- |\n"
-                              f"|{vulnerability['severity']}|{component['purl']}|{epss_score}|"
+                              f"|{severity}|{component['purl']}|{epss_score}|"
                               f"[CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})|\n\n"
                               f"{vulnerability['description']}"
                           )
@@ -369,11 +395,11 @@ jobs:
                   # Add result
                   result = {
                       "ruleId": vulnerability["vulnId"],
-                      "level": level,
+                      "level": severity,
                       "message": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"Severity: {vulnerability['severity']}\n"
+                              f"Severity: {severity}\n"
                               f"Package: {component['purl']}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})"
