@@ -346,6 +346,7 @@ jobs:
                   unused_deps = ""
                   with open("unused_dependencies.txt", "r") as file:
                       unused_deps = file.readlines()
+                  print(f"unused deps: {unused_deps}")
                   if dep_name in dependency_locations:
                       location_info = dependency_locations[dep_name]
                       file_path = location_info.get("file", "unknown")
@@ -355,6 +356,7 @@ jobs:
                   cvss_score = vulnerability.get("cvssV3BaseScore", 0)
                   severity = "0"
                   if dep_name not in unused_deps: 
+                      print(dep_name)
                       severity = epss_score_to_severity(epss_score, cvss_score)
                   # Add rule if not already added
                   rule = {
