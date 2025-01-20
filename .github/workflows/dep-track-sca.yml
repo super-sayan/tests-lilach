@@ -275,7 +275,7 @@ jobs:
                   return "8"
               else:
                   return "10"
-              return str(severity_score)
+              return str(severity*2)
                   
           def find_dependency_line(file_path, dependency_name):
               """
