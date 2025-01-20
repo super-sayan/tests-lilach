@@ -195,6 +195,12 @@ jobs:
 
           print("Dependency locations saved to dependency_locations.json")
           EOF
+          
+      - name: Upload Test results
+        uses: actions/upload-artifact@master
+        with:
+           name: dep locs
+           path: dependency_locations.json
 
       - name: Convert JSON to SARIF
         run: |
