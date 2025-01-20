@@ -338,15 +338,15 @@ jobs:
           
               rules = []
               results = []
-          
+              
+              unused_deps = ""
+              with open("unused_dependencies.txt", "r") as file:
+                  unused_deps = file.read()
+                  
               for entry in epss_data:
                   component = entry["component"]
                   vulnerability = entry["vulnerability"]
                   dep_name = component["name"]
-                  unused_deps = ""
-                  with open("unused_dependencies.txt", "r") as file:
-                      unused_deps = file.read()
-                  print(f"unused deps: {unused_deps}")
                   if dep_name in dependency_locations:
                       location_info = dependency_locations[dep_name]
                       file_path = location_info.get("file", "unknown")
@@ -355,9 +355,10 @@ jobs:
                   epss_score = vulnerability.get("epssScore", 0)
                   cvss_score = vulnerability.get("cvssV3BaseScore", 0)
                   severity = "0"
+                  usage = "unused dependency"
                   if dep_name not in unused_deps: 
-                      print(dep_name)
                       severity = epss_score_to_severity(epss_score, cvss_score)
+                      usage = "dependency in use"
                   # Add rule if not already added
                   rule = {
                       "id": vulnerability["vulnId"],
@@ -392,7 +393,7 @@ jobs:
                           "tags": [
                               "vulnerability",
                               "security",
-                              severity
+                              usage
                           ]
                       }
                   }
