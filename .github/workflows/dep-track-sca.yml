@@ -176,12 +176,6 @@ jobs:
 
           print("Dependency locations saved to dependency_locations.json")
           EOF
-          
-      - name: Upload Test results
-        uses: actions/upload-artifact@master
-        with:
-           name: dep locs
-           path: dependency_locations.json
 
       - name: Convert JSON to SARIF
         run: |
@@ -306,7 +300,7 @@ jobs:
                               "driver": {
                                   "fullName": "OWASP Dependency Track",
                                   "informationUri": "https://dependency-track.org/",
-                                  "name": "Dependency-Track tests",
+                                  "name": "Dependency-Track",
                                   "rules": []
                               }
                           },
