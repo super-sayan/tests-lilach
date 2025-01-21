@@ -99,7 +99,13 @@ jobs:
           scan-type: 'fs'            # File system scan
           format: 'cyclonedx'        # Generate CycloneDX format
           output: 'sbom.json'        # Output file
-           
+      
+      - name: Sbom
+        uses: actions/upload-artifact@master
+        with:
+           name: sbom
+           path: sbom.json
+      
       # An official Dependecy Track action for SBOM upload, doesn't work good with full URL of Dep Track Server.
       - name: Upload SBOM to Dependency Track
         uses: DependencyTrack/gh-upload-sbom@v3
