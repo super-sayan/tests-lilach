@@ -36,7 +36,7 @@ jobs:
           # Export as a reusable list
           DEPENDENCY_DIRS=$(cat dependency_dirs.txt | tr '\n' ' ')
           echo "Found directories: $DEPENDENCY_DIRS"
-          echo "DEPENDENCY_DIRS=$DEPENDENCY_DIRS" >> $GITHUB_ENV
+          echo "DEPENDENCY_DIRS=$DEPENDENCY_DIRS" >> $GITHUB_ENV          
       
       # Running Dependecy Check to define unused dependencies and create txt of unused deps.
       - name: Run Unused Dependency Check
@@ -49,13 +49,13 @@ jobs:
             if [ -f "package.json" ]; then
               echo "Running depcheck for Node.js..."
               output=$(npx depcheck || true)
-              cd $path
               
               # Parse and annotate unused dependencies.
               if echo "$output" | grep -q "Unused dependencies"; then
                 echo "$output" | sed -n '/Unused dependencies/,$p' | while IFS= read -r line; do
                   if [[ $line == "*"* ]]; then
                     dep=$(echo "$line" | sed -E 's/\* //; s/:.*$//')
+                    cd $path
                     echo "$dep" >> unused_dependencies.txt
                   fi
                 done
@@ -66,6 +66,7 @@ jobs:
                 echo "$output" | sed -n '/Unused devDependencies/,$p' | while IFS= read -r line; do
                   if [[ $line == "*"* ]]; then
                     dep=$(echo "$line" | sed -E 's/\* //; s/:.*$//')
+                    cd $path
                     echo "$dep" >> unused_dependencies.txt
                   fi
                 done
@@ -78,34 +79,19 @@ jobs:
               echo "$deptry_output" > deptry_output
               grep "DEP002" deptry_output | awk -F"'" '{print $2}' >> unused_dependencies.txt
             fi
-            cd - || exit
+            cd $path || exit
           done
 
           cat unused_dependencies.txt
       
-      # Installing Trivy for SBOM generation.
-      #- name: Install Trivy for SBOM Generation
-      #  run: |
-      #    curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.58.0/trivy_0.58.0_Linux-64bit.tar.gz | sudo tar xz -C /usr/local/bin
-      
       # Generating SBOM using Trivy.
-      #- name: Generate SBOM using Trivy
-      #  run: |
-      #    trivy fs --format cyclonedx --output sbom.json .
-
       - name: Setup Trivy Action
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          scan-type: 'fs'            # File system scan
-          format: 'cyclonedx'        # Generate CycloneDX format
-          output: 'sbom.json'        # Output file
-      
-      - name: Sbom
-        uses: actions/upload-artifact@master
-        with:
-           name: sbom
-           path: sbom.json
-      
+          scan-type: 'fs'
+          format: 'cyclonedx'
+          output: 'sbom.json'
+           
       # An official Dependecy Track action for SBOM upload, doesn't work good with full URL of Dep Track Server.
       - name: Upload SBOM to Dependency Track
         uses: DependencyTrack/gh-upload-sbom@v3
@@ -119,7 +105,7 @@ jobs:
           
       - name: Wait for SBOM Analysis
         run: |
-          sleep 30
+          sleep 60
         
       # Getting uuid of Project, that we have created on the previous step.
       - name: Fetch Project ID
@@ -224,7 +210,7 @@ jobs:
                               resolved = details.get("resolved", "")
                               if search_name in resolved:
                                   return lockfile_path.replace("./", "")
-                  except json.JSONDecodeError:
+                  except (json.JSONDecodeError, FileNotFoundError):
                       print(f"Failed to parse {lockfile_path}")
               return "unknown-lock"
               
@@ -261,7 +247,6 @@ jobs:
                   return "8"
               else:
                   return "10"
-              return str(severity*2)
                   
           def find_dependency_line(file_path, dependency_name):
               """
@@ -359,17 +344,17 @@ jobs:
                       "help": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"cvssScore: {cvss_score}\n"
                               f"Package: {component['purl']}\n"
+                              f"cvssScore: {cvss_score}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})\n"
                               f"{vulnerability['description']}"
                           ),
                           "markdown": (
                               f"**Vulnerability {vulnerability['vulnId']}**\n"
-                              f"| cvssScore | Package | epssScore | Link |\n"
+                              f"| Package | cvssScore | epssScore | Link |\n"
                               f"| --- | --- | --- | --- |\n"
-                              f"|{cvss_score}|{component['purl']}|{epss_score}|"
+                              f"|{component['purl']}|{cvss_score}|{epss_score}|"
                               f"[CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})|\n\n"
                               f"{vulnerability['description']}"
                           )
@@ -393,8 +378,8 @@ jobs:
                       "message": {
                           "text": (
                               f"Vulnerability {vulnerability['vulnId']}\n"
-                              f"cvssScore: {cvss_score}\n"
                               f"Package: {component['purl']}\n"
+                              f"cvssScore: {cvss_score}\n"
                               f"epssScore: {epss_score}\n"
                               f"Link: [CVE-{vulnerability['vulnId']}](https://nvd.nist.gov/vuln/detail/{vulnerability['vulnId']})"
                           )
