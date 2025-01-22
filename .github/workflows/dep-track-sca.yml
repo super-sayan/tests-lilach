@@ -16,6 +16,10 @@ jobs:
     permissions:
       security-events: write
     steps:
+      # Define repo for output of results.
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4.1.0
       
